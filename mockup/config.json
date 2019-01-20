@@ -1,0 +1,9 @@
+{
+    "RetreatOnNeutralOrHostileInLocal": true,
+    "RattingAnomaly": true,
+    "RattingAsteroids": false,
+    "WarpToBeltDistance": "Within 50 km",
+    "maxDistanceToRats": 120,
+    "IgnoreAnomalyName": "haven|Belt|asteroid|drone|forlorn|rally|sanctum|blood hub|serpentis hub|hidden|port|den",
+    "UnloadDestContainerName": "Item Hangar"
+}
