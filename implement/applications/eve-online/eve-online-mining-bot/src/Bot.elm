@@ -1,4 +1,4 @@
-{- EVE Online mining bot version 2020-04-18
+{- EVE Online mining bot version 2020-04-18 - 2020-04-19 Couladin Stop Ship
 
    The bot warps to an asteroid belt, mines there until the ore hold is full, and then docks at a station to unload the ore. It then repeats this cycle until you stop it.
    It remembers the station in which it was last docked, and docks again at the same station.
@@ -50,9 +50,9 @@ import Set
 -}
 defaultBotSettings : BotSettings
 defaultBotSettings =
-    { runAwayShieldHitpointsThresholdPercent = 50
-    , targetingRange = 8000
-    , miningModuleRange = 5000
+    { runAwayShieldHitpointsThresholdPercent = 80
+    , targetingRange = 20000
+    , miningModuleRange = 14000
     , botStepDelayMilliseconds = 2000
     , lastDockedStationNameFromInfoPanel = Nothing
     , oreHoldMaxPercent = 99
@@ -530,8 +530,8 @@ ensureOreHoldIsSelectedInInventoryWindow parsedUserInterface continueWithInvento
                         )
 
 
-lockTargetFromOverviewEntryAndEnsureIsInRange : Int -> OverviewWindowEntry -> DecisionPathNode
-lockTargetFromOverviewEntryAndEnsureIsInRange rangeInMeters overviewEntry =
+lockTargetFromOverviewEntryAndEnsureIsInRange : ParsedUserInterface -> Int -> OverviewWindowEntry -> DecisionPathNode
+lockTargetFromOverviewEntryAndEnsureIsInRange parsedUserInterface rangeInMeters overviewEntry =
     case overviewEntry.objectDistanceInMeters of
         Ok distanceInMeters ->
             if distanceInMeters <= rangeInMeters then
@@ -540,39 +540,65 @@ lockTargetFromOverviewEntryAndEnsureIsInRange rangeInMeters overviewEntry =
 
                 else
                     DescribeBranch "Object is in range. Lock target."
-                        (lockTargetFromOverviewEntry overviewEntry)
+                        (lockTargetFromOverviewEntryAndStopShip overviewEntry)
 
             else
-                DescribeBranch ("Object is not in range (" ++ (distanceInMeters |> String.fromInt) ++ " meters away). Approach.")
-                    (EndDecisionPath
-                        (actStartingWithRightClickOnOverviewEntry
-                            overviewEntry
-                            [ ( "Click menu entry 'approach'."
-                              , lastContextMenuOrSubmenu
-                                    >> Maybe.andThen (menuEntryContainingTextIgnoringCase "approach")
-                                    >> Maybe.map (.uiNode >> clickOnUIElement MouseButtonLeft >> List.singleton)
-                              )
-                            ]
-                        )
+                DescribeBranch "Asteroid is not in range. Approach."
+                    (if ParsedUserInterface |> isShipApproaching then
+                        DescribeBranch "record the approach click, and send the bot in a wait loop" (EndDecisionPath Wait)
+
+                     else
+                        DescribeBranch ("Object is not in range (" ++ (distanceInMeters |> String.fromInt) ++ " meters away). Approach.")
+                            (EndDecisionPath
+                                (actStartingWithRightClickOnOverviewEntry
+                                    overviewEntry
+                                    [ ( "Click menu entry 'approach'."
+                                      , lastContextMenuOrSubmenu
+                                            >> Maybe.andThen (menuEntryContainingTextIgnoringCase "approach")
+                                            >> Maybe.map (.uiNode >> clickOnUIElement MouseButtonLeft >> List.singleton)
+                                      )
+                                    ]
+                                )
+                            )
                     )
 
         Err error ->
             DescribeBranch ("Failed to read the distance: " ++ error) (EndDecisionPath Wait)
 
 
-lockTargetFromOverviewEntry : OverviewWindowEntry -> DecisionPathNode
-lockTargetFromOverviewEntry overviewEntry =
+lockTargetFromOverviewEntryAndStopShip : OverviewWindowEntry -> DecisionPathNode
+lockTargetFromOverviewEntryAndStopShip overviewEntry =
     DescribeBranch ("Lock target from overview entry '" ++ (overviewEntry.objectName |> Maybe.withDefault "") ++ "'")
         (EndDecisionPath
             (actStartingWithRightClickOnOverviewEntry overviewEntry
-                [ ( "Click menu entry 'Lock target'."
+                [ ( "Click menu entry 'Lock target'. Then press CTRL and SPACE keys."
                   , lastContextMenuOrSubmenu
                         >> Maybe.andThen (menuEntryWithTextEqualsIgnoringCase "Lock target")
-                        >> Maybe.map (.uiNode >> clickOnUIElement MouseButtonLeft >> List.singleton)
+                        >> Maybe.map (.uiNode >> clickOnUIElement MouseButtonLeft)
+                        >> Maybe.map
+                            (\partToClickOnTheMenuEntry ->
+                                [ partToClickOnTheMenuEntry
+                                , VolatileHostInterface.KeyDown VolatileHostInterface.VK_CONTROL
+                                , VolatileHostInterface.KeyDown (VolatileHostInterface.VirtualKeyCodeFromInt 0x20)
+                                , VolatileHostInterface.KeyUp (VolatileHostInterface.VirtualKeyCodeFromInt 0x20)
+                                , VolatileHostInterface.KeyUp VolatileHostInterface.VK_CONTROL
+                                ]
+                            )
                   )
                 ]
             )
         )
+
+
+isShipApproaching : ParsedUserInterface -> Bool
+isShipApproaching =
+    .shipUI
+        >> maybeNothingFromCanNotSeeIt
+        >> Maybe.andThen (.indication >> maybeNothingFromCanNotSeeIt)
+        >> Maybe.andThen (.maneuverType >> maybeNothingFromCanNotSeeIt)
+        >> Maybe.map ((==) EveOnline.ParseUserInterface.ManeuverApproach)
+        -- If the ship is just floating in space, there might be no indication displayed.
+        >> Maybe.withDefault False
 
 
 dockToStationMatchingNameSeenInInfoPanel : { stationNameFromInfoPanel : String } -> ParsedUserInterface -> DecisionPathNode
@@ -590,9 +616,9 @@ dockToStationUsingSurroundingsButtonMenu :
     -> DecisionPathNode
 dockToStationUsingSurroundingsButtonMenu ( describeChooseStation, chooseStationMenuEntry ) =
     useContextMenuOnListSurroundingsButton
-        [ ( "Click on menu entry 'stations'."
+        [ ( "Click on menu entry 'locations'."
           , lastContextMenuOrSubmenu
-                >> Maybe.andThen (menuEntryContainingTextIgnoringCase "stations")
+                >> Maybe.andThen (menuEntryContainingTextIgnoringCase "Locations")
                 >> Maybe.map (.uiNode >> clickOnUIElement MouseButtonLeft >> List.singleton)
           )
         , ( describeChooseStation
@@ -670,7 +696,7 @@ launchDrones parsedUserInterface =
                             dronesInLocalSpaceQuantity =
                                 droneGroupInLocalSpace.header.quantityFromTitle |> Maybe.withDefault 0
                         in
-                        if 0 < dronesInBayQuantity && dronesInLocalSpaceQuantity < 5 then
+                        if 0 < dronesInBayQuantity && dronesInLocalSpaceQuantity < 3 then
                             Just
                                 (DescribeBranch "Launch drones"
                                     (EndDecisionPath
@@ -829,7 +855,7 @@ initState =
     EveOnline.BotFramework.initState
         { programState = Nothing
         , botMemory =
-            { lastDockedStationNameFromInfoPanel = Nothing
+            { lastDockedStationNameFromInfoPanel = Just "Refinery"
             , timesUnloaded = 0
             , volumeUnloadedCubicMeters = 0
             , lastUsedCapacityInOreHold = Nothing
