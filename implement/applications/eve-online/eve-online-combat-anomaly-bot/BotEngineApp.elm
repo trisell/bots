@@ -133,7 +133,12 @@ type alias BotState =
 type alias BotMemory =
     { lastDockedStationNameFromInfoPanel : Maybe String
     , shipModules : ShipModulesMemory
+    , visitedAnomalies : Dict.Dict String AnomalyVisitMemory
     }
+
+
+type alias AnomalyVisitMemory =
+    { friendlyArrivedBeforeUs : Bool }
 
 
 type alias BotDecisionContext =
@@ -541,6 +546,7 @@ initState =
         , botMemory =
             { lastDockedStationNameFromInfoPanel = Nothing
             , shipModules = EveOnline.AppFramework.initShipModulesMemory
+            , visitedAnomalies = Dict.empty
             }
         }
 
@@ -712,6 +718,9 @@ integrateCurrentReadingsIntoBotMemory currentReading botMemoryBefore =
                 |> maybeVisibleAndThen .expandedContent
                 |> maybeNothingFromCanNotSeeIt
                 |> Maybe.andThen .currentStationName
+
+        visitedAnomalies =
+            botMemoryBefore.visitedAnomalies |> integrateCurrentReadingsIntoVisitedAnomalies currentReading
     in
     { lastDockedStationNameFromInfoPanel =
         [ currentStationNameFromInfoPanel, botMemoryBefore.lastDockedStationNameFromInfoPanel ]
@@ -720,7 +729,13 @@ integrateCurrentReadingsIntoBotMemory currentReading botMemoryBefore =
     , shipModules =
         botMemoryBefore.shipModules
             |> EveOnline.AppFramework.integrateCurrentReadingsIntoShipModulesMemory currentReading
+    , visitedAnomalies = visitedAnomalies
     }
+
+
+integrateCurrentReadingsIntoVisitedAnomalies : ReadingFromGameClient -> Dict.Dict String AnomalyVisitMemory -> Dict.Dict String AnomalyVisitMemory
+integrateCurrentReadingsIntoVisitedAnomalies currentReading memoryBefore =
+    memoryBefore
 
 
 unpackToDecisionStagesDescriptionsAndLeaf : DecisionPathNode -> ( List String, EndDecisionPathStructure )
