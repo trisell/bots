@@ -735,7 +735,25 @@ integrateCurrentReadingsIntoBotMemory currentReading botMemoryBefore =
 
 integrateCurrentReadingsIntoVisitedAnomalies : ReadingFromGameClient -> Dict.Dict String AnomalyVisitMemory -> Dict.Dict String AnomalyVisitMemory
 integrateCurrentReadingsIntoVisitedAnomalies currentReading memoryBefore =
+    let
+        currentAnomalyScanResult =
+            currentReading.probeScannerWindow
+                |> maybeNothingFromCanNotSeeIt
+                |> Maybe.andThen (getScanResultRowsForSitesOnGrid >> List.head)
+    in
     memoryBefore
+
+
+getScanResultRowsForSitesOnGrid : EveOnline.ParseUserInterface.ProbeScannerWindow -> List EveOnline.ParseUserInterface.ProbeScanResult
+getScanResultRowsForSitesOnGrid probeScannerWindow =
+    probeScannerWindow.scanResults
+        |> List.filter scanResultLooksLikeItIsOnGrid
+
+
+scanResultLooksLikeItIsOnGrid : EveOnline.ParseUserInterface.ProbeScanResult -> Bool
+scanResultLooksLikeItIsOnGrid =
+    .textsLeftToRight
+        >> List.any (\text -> (text |> String.contains " m") || (text |> String.contains " km"))
 
 
 unpackToDecisionStagesDescriptionsAndLeaf : DecisionPathNode -> ( List String, EndDecisionPathStructure )
