@@ -138,7 +138,7 @@ parseBotSettings =
            , AppSettings.valueTypeInteger (\delay settings -> { settings | botStepDelayMilliseconds = delay })
            )
          , ( "focus-ore-type"
-           , AppSettings.valueTypeString (\oreName -> \settings -> { settings | focusOreType = Just oretype})
+           , AppSettings.valueTypeString (\oreName -> \settings -> { settings | focusOreType = Just oreName})
            )
          ]
             |> Dict.fromList
