@@ -1095,7 +1095,6 @@ overviewWindowEntriesRepresentingAsteroids : ReadingFromGameClient -> List Overv
 overviewWindowEntriesRepresentingAsteroids =
     .overviewWindow
         >> Maybe.map (.entries >> List.filter overviewWindowEntryRepresentsAnAsteroid)
-        >> Maybe.map
         >> Maybe.withDefault []
 
 overviewWindowEntryRepresentsAnAsteroid : OverviewWindowEntry -> Bool
