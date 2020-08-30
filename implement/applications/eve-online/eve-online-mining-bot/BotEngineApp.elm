@@ -1099,6 +1099,7 @@ overviewWindowEntriesRepresentingAsteroids =
 
 overviewWindowEntryRepresentsAnAsteroid : OverviewWindowEntry -> Bool
 overviewWindowEntryRepresentsAnAsteroid entry =
+    Debug.toString(parseBotSettings)
     (entry.textsLeftToRight |> List.any (String.toLower >> String.contains "asteroid"))
         && (entry.textsLeftToRight |> List.any (String.toLower >> String.contains "concentrated veldspar"))
         && (entry.textsLeftToRight |> List.any (String.toLower >> String.contains "belt") |> not)
