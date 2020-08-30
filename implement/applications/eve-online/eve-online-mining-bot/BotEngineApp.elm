@@ -1089,7 +1089,7 @@ topmostAsteroidFromOverviewWindow : ReadingFromGameClient -> Maybe OverviewWindo
 topmostAsteroidFromOverviewWindow =
     overviewWindowEntriesRepresentingAsteroids
         >> List.sortBy (.uiNode >> .totalDisplayRegion >> .y)
-        >> List.any (String.toLower >> String.contains focusOreType) || List.head
+        >> List.any (String.toLower >> String.contains context.eventContext.appSettings.focusOreType) || List.head
 
 
 overviewWindowEntriesRepresentingAsteroids : ReadingFromGameClient -> List OverviewWindowEntry
