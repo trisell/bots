@@ -98,6 +98,7 @@ defaultBotSettings =
     , botStepDelayMilliseconds = 2000
     , oreHoldMaxPercent = 99
     , selectInstancePilotName = Nothing
+    , focusOreType = Nothing
     }
 
 
@@ -136,6 +137,9 @@ parseBotSettings =
          , ( "bot-step-delay"
            , AppSettings.valueTypeInteger (\delay settings -> { settings | botStepDelayMilliseconds = delay })
            )
+         , ( "focus-ore-type"
+           , AppSettings.valueTypeString (\oreName -> \settings -> { settings | focusOreType = oreName :: settings.focusOreType})
+           )
          ]
             |> Dict.fromList
         )
@@ -158,6 +162,7 @@ type alias BotSettings =
     , botStepDelayMilliseconds : Int
     , oreHoldMaxPercent : Int
     , selectInstancePilotName : Maybe String
+    , focusOreType : Maybe String
     }
 
 
@@ -1084,7 +1089,7 @@ topmostAsteroidFromOverviewWindow : ReadingFromGameClient -> Maybe OverviewWindo
 topmostAsteroidFromOverviewWindow =
     overviewWindowEntriesRepresentingAsteroids
         >> List.sortBy (.uiNode >> .totalDisplayRegion >> .y)
-        >> List.head
+        >> List.any (String.toLower >> String.contains focusOreType) || List.head
 
 
 overviewWindowEntriesRepresentingAsteroids : ReadingFromGameClient -> List OverviewWindowEntry
