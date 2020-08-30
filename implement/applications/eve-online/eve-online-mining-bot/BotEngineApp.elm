@@ -138,7 +138,7 @@ parseBotSettings =
            , AppSettings.valueTypeInteger (\delay settings -> { settings | botStepDelayMilliseconds = delay })
            )
          , ( "focus-ore-type"
-           , AppSettings.valueTypeString (\oreName -> \settings -> { settings | focusOreType = oreName :: settings.focusOreType})
+           , AppSettings.valueTypeString (\oreName -> \settings -> { settings | focusOreType = Just oretype})
            )
          ]
             |> Dict.fromList
@@ -1089,7 +1089,7 @@ topmostAsteroidFromOverviewWindow : ReadingFromGameClient -> Maybe OverviewWindo
 topmostAsteroidFromOverviewWindow =
     overviewWindowEntriesRepresentingAsteroids
         >> List.sortBy (.uiNode >> .totalDisplayRegion >> .y)
-        >> List.any (String.toLower >> String.contains context.eventContext.appSettings.focusOreType) || List.head
+        >> List.any (String.toLower >> String.contains "Concentrated Veldspar") || List.head
 
 
 overviewWindowEntriesRepresentingAsteroids : ReadingFromGameClient -> List OverviewWindowEntry
