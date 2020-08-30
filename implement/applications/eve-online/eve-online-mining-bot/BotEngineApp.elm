@@ -1089,19 +1089,19 @@ topmostAsteroidFromOverviewWindow : ReadingFromGameClient -> Maybe OverviewWindo
 topmostAsteroidFromOverviewWindow =
     overviewWindowEntriesRepresentingAsteroids
         >> List.sortBy (.uiNode >> .totalDisplayRegion >> .y)
-        >> List.any (String.toLower >> String.contains "Concentrated Veldspar") || List.head
-
+        >> List.head
 
 overviewWindowEntriesRepresentingAsteroids : ReadingFromGameClient -> List OverviewWindowEntry
 overviewWindowEntriesRepresentingAsteroids =
     .overviewWindow
         >> Maybe.map (.entries >> List.filter overviewWindowEntryRepresentsAnAsteroid)
+        >> Maybe.map
         >> Maybe.withDefault []
-
 
 overviewWindowEntryRepresentsAnAsteroid : OverviewWindowEntry -> Bool
 overviewWindowEntryRepresentsAnAsteroid entry =
     (entry.textsLeftToRight |> List.any (String.toLower >> String.contains "asteroid"))
+        && (entry.textsLeftToRight |> List.any (String.toLower >> String.contains "concentrated veldspar"))
         && (entry.textsLeftToRight |> List.any (String.toLower >> String.contains "belt") |> not)
 
 
