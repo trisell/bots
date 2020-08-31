@@ -755,7 +755,7 @@ warpToMiningSite readingFromGameClient =
     readingFromGameClient
         |> useContextMenuCascadeOnListSurroundingsButton
             (useMenuEntryWithTextContaining "asteroid belts"
-                (useRandomMenuEntry
+                (useMenuEntryWithTextContaining "Talidal VII - Asteroid Belt 2"
                     (useMenuEntryWithTextContaining "Warp to Within"
                         (useMenuEntryWithTextContaining "Within 0 m" menuCascadeCompleted)
                     )
