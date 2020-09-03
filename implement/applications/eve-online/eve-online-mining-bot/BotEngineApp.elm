@@ -98,6 +98,7 @@ defaultBotSettings =
     , botStepDelayMilliseconds = 2000
     , oreHoldMaxPercent = 99
     , selectInstancePilotName = Nothing
+    , focusOreType = Nothing
     }
 
 
@@ -136,6 +137,9 @@ parseBotSettings =
          , ( "bot-step-delay"
            , AppSettings.valueTypeInteger (\delay settings -> { settings | botStepDelayMilliseconds = delay })
            )
+         , ( "focus-ore-type"
+           , AppSettings.valueTypeString (\oreName -> \settings -> { settings | focusOreType = Just oreName})
+           )
          ]
             |> Dict.fromList
         )
@@ -158,6 +162,7 @@ type alias BotSettings =
     , botStepDelayMilliseconds : Int
     , oreHoldMaxPercent : Int
     , selectInstancePilotName : Maybe String
+    , focusOreType : Maybe String
     }
 
 
@@ -750,7 +755,7 @@ warpToMiningSite readingFromGameClient =
     readingFromGameClient
         |> useContextMenuCascadeOnListSurroundingsButton
             (useMenuEntryWithTextContaining "asteroid belts"
-                (useRandomMenuEntry
+                (useMenuEntryWithTextContaining "Talidal VII - Asteroid Belt 2"
                     (useMenuEntryWithTextContaining "Warp to Within"
                         (useMenuEntryWithTextContaining "Within 0 m" menuCascadeCompleted)
                     )
@@ -1086,17 +1091,16 @@ topmostAsteroidFromOverviewWindow =
         >> List.sortBy (.uiNode >> .totalDisplayRegion >> .y)
         >> List.head
 
-
 overviewWindowEntriesRepresentingAsteroids : ReadingFromGameClient -> List OverviewWindowEntry
 overviewWindowEntriesRepresentingAsteroids =
     .overviewWindow
         >> Maybe.map (.entries >> List.filter overviewWindowEntryRepresentsAnAsteroid)
         >> Maybe.withDefault []
 
-
 overviewWindowEntryRepresentsAnAsteroid : OverviewWindowEntry -> Bool
 overviewWindowEntryRepresentsAnAsteroid entry =
     (entry.textsLeftToRight |> List.any (String.toLower >> String.contains "asteroid"))
+        && (entry.textsLeftToRight |> List.any (String.toLower >> String.contains "concentrated veldspar"))
         && (entry.textsLeftToRight |> List.any (String.toLower >> String.contains "belt") |> not)
 
 
